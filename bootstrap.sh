@@ -163,6 +163,7 @@ function ensure_sshkey_is_linked_to_github() {
                 if [[ "${githubKeyFingerprint}" == "${localKeyFingerprint}" ]] ; then
                     sshKeyFilepath="$keyFile"
                     echo "Confirmed that this key is linked to your GitHub Account - ready to rock'n'roll!"
+                    rm -f "$githubKeysFile"
                     return 0
                 fi
             done
@@ -170,6 +171,7 @@ function ensure_sshkey_is_linked_to_github() {
     done
     echo "Unable to verify that you have an SSH Key that is linked to your GitHub Account." >&2
     echo "You may need to start over, or ask on Slack for assistance debugging. If asking on Slack, please share the above output." >&2
+    rm -f "$githubKeysFile"
     exit 1
 }
 
