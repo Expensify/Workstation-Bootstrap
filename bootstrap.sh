@@ -194,8 +194,8 @@ function clone_stage2_repo() {
 
 function exec_bootstrap_stage2() {
     echo "Handing over to Bootstrap Stage 2..."
-    cd $HOME/Expensify-ToolKit/
-    exec ./bootstrap.sh "$userFullName" "$userEmail" "$userGithub"
+    cd $HOME/Expensify-ToolKit/ansible/
+    exec ./bootstrap-stage2.sh "$userFullName" "$userEmail" "$userGithub"
 }
 
 cat <<EOT
