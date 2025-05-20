@@ -200,7 +200,8 @@ function exec_bootstrap_stage2() {
     exec ./bootstrap-stage2.sh "$userFullName" "$userEmail" "$userGithub"
 }
 
-cat <<EOT
+# Note: Quoting the heredoc delimiter ('EOT') makes the backslashes render as normal characters (not escape characters)
+cat <<"EOT"
  __          ______  _____  _  __ _____ _______    _______ _____ ____  _   _
  \ \        / / __ \|  __ \| |/ // ____|__   __|/\|__   __|_   _/ __ \| \ | |
   \ \  /\  / / |  | | |__) | ' /| (___    | |  /  \  | |    | || |  | |  \| |
