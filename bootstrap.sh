@@ -49,10 +49,10 @@ function check_supported_platform() {
 
     echo "Well this is awkward... I don't know if I can work on this computer!" >&2
     echo "Currently I'm only tested on $(tput bold)macOS$(tput sgr0) and $(tput bold)Ubuntu$(tput sgr0)" >&2
-    echo "If you're not trying to add support for a new platform, please share the below information on Slack"
-    uname -a
+    echo "If you're not trying to add support for a new platform, please share the below information on Slack" >&2
+    uname -a >&2
     if [[ -f '/etc/os-release' ]] ; then
-        cat /etc/os-release
+        cat /etc/os-release >&2
     fi
     exit 1
 }
