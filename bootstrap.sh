@@ -3,8 +3,8 @@
 ###############################################################################
 # This script is the very first stage of bootstrapping new workstations for
 # employees. It does the absolute bare-minimum required in order to clone our
-# private repository with the Stage 2 bootstrap scripts, then hands off to
-# those Stage 2 scripts.
+# private repository with the Stage 2 bootstrap scripts and hand off to those
+# Stage 2 processes.
 #
 # Any persistent changes to the system (eg, writing data to disk etc) should
 # be avoided unless it is absolutely required to achieve the above goal.
@@ -14,6 +14,8 @@
 ###############################################################################
 
 set -eu
+
+readonly AUDITBOT_CONFIG='/etc/auditbot.conf'
 
 function command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -66,6 +68,21 @@ function check_supported_platform() {
 }
 
 function get_user_details() {
+    if [[ -f "$AUDITBOT_CONFIG" ]] ; then
+        source "$AUDITBOT_CONFIG"
+        userFullName="$FULLNAME"
+        userEmail="$EMAIL"
+        userGithub="$GITHUB"
+        echo "I found these existing details about you in $AUDITBOT_CONFIG"
+        echo "  Full Name: $userFullName"
+        echo "  Email: $userEmail"
+        echo "  GitHub: $userGithub"
+        if prompt_yn "Do you want to continue with these details?" ; then
+            return 0
+        fi
+        echo "No problemo - let's fix that up..."
+    fi
+
     while true ; do
         while true ; do
             read -p "What is your full name? " userFullName
@@ -204,7 +221,7 @@ function install_brew() {
         fi
     fi
     echo "Updating Homebrew"
-    brew --quiet update
+    brew update --quiet
 }
 
 function install_git() {
@@ -220,16 +237,61 @@ function install_git() {
     esac
 }
 
+function install_ansible() {
+    if command_exists ansible ; then
+        echo "Ansible already installed; no need to install it again."
+        return
+    fi
+
+    case "$(uname -s)" in
+        Darwin)
+            echo "Installing ansible"
+            brew install ansible
+            ;;
+        Linux)
+            # Make sure we have software-properties-common package for `apt-add-repository` command
+            if ! dpkg -l software-properties-common &>/dev/null ; then
+                echo "Installing software-properties-common"
+                sudo apt-get install -qq -y software-properties-common
+            fi
+
+            # Make sure the Ansible apt repository is configured
+            if ! apt-add-repository --list | grep -q "^deb .*ansible" ; then
+                echo "Adding Ansible PPA repository"
+                sudo apt-add-repository -y ppa:ansible/ansible
+            fi
+
+            echo "Installing ansible"
+            sudo apt-get -qq update
+            sudo apt-get install -qq -y ansible
+            ;;
+    esac
+}
+
 function clone_stage2_repo() {
     echo "Cloning the private bootstrapping repository from GitHub... Standby..."
     export GIT_SSH_COMMAND="ssh -o IdentityFile=$sshKeyFilepath -o StrictHostKeyChecking=accept-new"
     git clone -q git@github.com:Expensify/Expensify-ToolKit.git $HOME/Expensify-ToolKit/
 }
 
-function exec_bootstrap_stage2() {
-    echo "Handing over to Bootstrap Stage 2..."
+function start_bootstrap_stage2() {
+    echo "$(tput smso)Starting Bootstrap Stage 2$(tput sgr0)"
     cd $HOME/Expensify-ToolKit/ansible/
-    exec ./bootstrap-stage2.sh "$userFullName" "$userEmail" "$userGithub"
+
+    # Silence warnings about not having an inventory
+    export ANSIBLE_LOCALHOST_WARNING=False
+    export ANSIBLE_INVENTORY_UNPARSED_WARNING=False
+
+    # Ansible bug regarding Locale. See: https://gist.github.com/pwalkr/311e4ce16d6aedb5be50f159c8b5cc9c
+    export LC_ALL=
+
+    echo "$(tput bold)Please enter your password when prompted for 'BECOME password'$(tput sgr0)"
+    ansible-playbook \
+        --ask-become-pass \
+        --extra-vars user_fullname="$userFullName" \
+        --extra-vars user_email="$userEmail" \
+        --extra-vars github_username="$userGithub" \
+        ./bootstrap.yml
 }
 
 # Note: Quoting the heredoc delimiter ('EOT') makes the backslashes render as normal characters (not escape characters)
@@ -260,6 +322,11 @@ in your home directory: $HOME/.ssh/
 
 EOT
 
+if [[ $EUID -eq 0 ]] ; then
+    echo "ERROR: This script should be run as your normal user (not as root or using sudo)" >&2
+    exit 1
+fi
+
 check_supported_platform()
 if ! prompt_yn "Ready to get started?" ; then
   exit 1
@@ -279,5 +346,6 @@ if [[ "$(uname -s)" == "Darwin" ]] ; then
     install_brew
 fi
 install_git
+install_ansible
 clone_stage2_repo
-exec_bootstrap_stage2
+start_bootstrap_stage2
