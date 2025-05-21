@@ -30,6 +30,14 @@ function prompt_yn() {
     done
 }
 
+function sudo() {
+    # A wrapper on top of `sudo` to provide the user with a more helpful prompt when their sudo password is required
+    if ! sudo -n true ; then
+        echo "$(tput bold)ACTION REQUIRED:$(tput sgr0) Please enter your password so we can escalate to root permissions using sudo"
+    fi
+    command "$@"
+}
+
 function check_supported_platform() {
     case "$(uname -s)" in
         Darwin)
@@ -208,7 +216,7 @@ function install_git() {
     echo "Installing git"
     case "$(uname -s)" in
         Darwin) brew install git;;
-        Linux) apt-get -qq -y install git;;
+        Linux) sudo apt-get -qq -y install git;;
     esac
 }
 
