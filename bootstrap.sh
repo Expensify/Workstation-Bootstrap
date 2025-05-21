@@ -141,7 +141,7 @@ function ensure_sshkey_exists() {
 }
 
 function ensure_sshkey_is_linked_to_github() {
-    $githubKeysFile="$(mktemp)"
+    githubKeysFile="$(mktemp)"
 
     # First check that GitHub actually has keys linked to the account
     curl --silent "https://github.com/${userGithub}.keys" > "$githubKeysFile"
@@ -175,6 +175,30 @@ function ensure_sshkey_is_linked_to_github() {
     exit 1
 }
 
+function install_brew() {
+    if command_exists brew ; then
+        echo "Homebrew is already installed; no need to install it again."
+        return
+    fi
+
+    echo "Homebrew not found, installing..."
+    /bin/bash -c "$(curl --fail --silent --show-error --location https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+    # Add brew to path if needed
+    if ! command_exists brew ; then
+        if [[ -f /opt/homebrew/bin/brew ]]; then
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+        elif [[ -f /usr/local/bin/brew ]]; then
+            eval "$(/usr/local/bin/brew shellenv)"
+        else
+            echo "Failed to find Homebrew after installation" >&2
+            exit 1
+        fi
+    fi
+    echo "Updating Homebrew"
+    brew --quiet update
+}
+
 function install_git() {
     if command_exists git ; then
         echo "git already installed"
@@ -183,7 +207,7 @@ function install_git() {
 
     echo "Installing git"
     case "$(uname -s)" in
-        Darwin) xcode-select --install;;
+        Darwin) brew install git;;
         Linux) apt-get -qq -y install git;;
     esac
 }
@@ -240,9 +264,12 @@ userEmail=
 userGithub=
 sshKeyFilepath=
 
-get_user_details()
-ensure_sshkey_exists()
-ensure_sshkey_is_linked_to_github()
-install_git()
-clone_stage2_repo()
-exec_bootstrap_stage2()
+get_user_details
+ensure_sshkey_exists
+ensure_sshkey_is_linked_to_github
+if [[ "$(uname -s)" == "Darwin" ]] ; then
+    install_brew
+fi
+install_git
+clone_stage2_repo
+exec_bootstrap_stage2
