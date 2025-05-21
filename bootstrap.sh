@@ -196,7 +196,7 @@ function install_brew() {
         fi
     fi
     echo "Updating Homebrew"
-    brew --quiet update
+    brew update --quiet
 }
 
 function install_git() {
