@@ -141,7 +141,7 @@ function ensure_sshkey_exists() {
 }
 
 function ensure_sshkey_is_linked_to_github() {
-    $githubKeysFile="$(mktemp)"
+    githubKeysFile="$(mktemp)"
 
     # First check that GitHub actually has keys linked to the account
     curl --silent "https://github.com/${userGithub}.keys" > "$githubKeysFile"
@@ -264,12 +264,12 @@ userEmail=
 userGithub=
 sshKeyFilepath=
 
-get_user_details()
-ensure_sshkey_exists()
-ensure_sshkey_is_linked_to_github()
+get_user_details
+ensure_sshkey_exists
+ensure_sshkey_is_linked_to_github
 if [[ "$(uname -s)" == "Darwin" ]] ; then
-    install_brew()
+    install_brew
 fi
-install_git()
-clone_stage2_repo()
-exec_bootstrap_stage2()
+install_git
+clone_stage2_repo
+exec_bootstrap_stage2
