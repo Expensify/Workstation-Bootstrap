@@ -266,10 +266,24 @@ function clone_stage2_repo() {
     git clone -q git@github.com:Expensify/Expensify-ToolKit.git $HOME/Expensify-ToolKit/
 }
 
-function exec_bootstrap_stage2() {
-    echo "Handing over to Bootstrap Stage 2..."
+function start_bootstrap_stage2() {
+    echo "$(tput smso)Starting Bootstrap Stage 2$(tput sgr0)"
     cd $HOME/Expensify-ToolKit/ansible/
-    exec ./bootstrap-stage2.sh "$userFullName" "$userEmail" "$userGithub"
+
+    # Silence warnings about not having an inventory
+    export ANSIBLE_LOCALHOST_WARNING=False
+    export ANSIBLE_INVENTORY_UNPARSED_WARNING=False
+
+    # Ansible bug regarding Locale. See: https://gist.github.com/pwalkr/311e4ce16d6aedb5be50f159c8b5cc9c
+    export LC_ALL=
+
+    echo "$(tput bold)Please enter your password when prompted for 'BECOME password'$(tput sgr0)"
+    ansible-playbook \
+        --ask-become-pass \
+        --extra-vars user_fullname="$userFullName" \
+        --extra-vars user_email="$userEmail" \
+        --extra-vars github_username="$userGithub" \
+        ./bootstrap.yml
 }
 
 # Note: Quoting the heredoc delimiter ('EOT') makes the backslashes render as normal characters (not escape characters)
@@ -321,4 +335,4 @@ fi
 install_git
 install_ansible
 clone_stage2_repo
-exec_bootstrap_stage2
+start_bootstrap_stage2
