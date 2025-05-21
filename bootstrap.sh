@@ -314,6 +314,11 @@ in your home directory: $HOME/.ssh/
 
 EOT
 
+if [[ $EUID -eq 0 ]] ; then
+    echo "ERROR: This script should be run as your normal user (not as root or using sudo)" >&2
+    exit 1
+fi
+
 check_supported_platform()
 if ! prompt_yn "Ready to get started?" ; then
   exit 1
