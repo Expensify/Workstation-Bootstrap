@@ -15,6 +15,8 @@
 
 set -eu
 
+readonly AUDITBOT_CONFIG='/etc/auditbot.conf'
+
 function command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
@@ -58,6 +60,21 @@ function check_supported_platform() {
 }
 
 function get_user_details() {
+    if [[ -f "$AUDITBOT_CONFIG" ]] ; then
+        source "$AUDITBOT_CONFIG"
+        userFullName="$FULLNAME"
+        userEmail="$EMAIL"
+        userGithub="$GITHUB"
+        echo "I found these existing details about you in $AUDITBOT_CONFIG"
+        echo "  Full Name: $userFullName"
+        echo "  Email: $userEmail"
+        echo "  GitHub: $userGithub"
+        if prompt_yn "Do you want to continue with these details?" ; then
+            return 0
+        fi
+        echo "No problemo - let's fix that up..."
+    fi
+
     while true ; do
         while true ; do
             read -p "What is your full name? " userFullName
