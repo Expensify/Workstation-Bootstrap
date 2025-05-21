@@ -3,8 +3,8 @@
 ###############################################################################
 # This script is the very first stage of bootstrapping new workstations for
 # employees. It does the absolute bare-minimum required in order to clone our
-# private repository with the Stage 2 bootstrap scripts, then hands off to
-# those Stage 2 scripts.
+# private repository with the Stage 2 bootstrap scripts and hand off to those
+# Stage 2 processes.
 #
 # Any persistent changes to the system (eg, writing data to disk etc) should
 # be avoided unless it is absolutely required to achieve the above goal.
@@ -212,6 +212,37 @@ function install_git() {
     esac
 }
 
+function install_ansible() {
+    if command_exists ansible ; then
+        echo "Ansible already installed; no need to install it again."
+        return
+    fi
+
+    case "$(uname -s)" in
+        Darwin)
+            echo "Installing ansible"
+            brew install ansible
+            ;;
+        Linux)
+            # Make sure we have software-properties-common package for `apt-add-repository` command
+            if ! dpkg -l software-properties-common &>/dev/null ; then
+                echo "Installing software-properties-common"
+                sudo apt-get install -qq -y software-properties-common
+            fi
+
+            # Make sure the Ansible apt repository is configured
+            if ! apt-add-repository --list | grep -q "^deb .*ansible" ; then
+                echo "Adding Ansible PPA repository"
+                sudo apt-add-repository -y ppa:ansible/ansible
+            fi
+
+            echo "Installing ansible"
+            sudo apt-get -qq update
+            sudo apt-get install -qq -y ansible
+            ;;
+    esac
+}
+
 function clone_stage2_repo() {
     echo "Cloning the private bootstrapping repository from GitHub... Standby..."
     export GIT_SSH_COMMAND="ssh -o IdentityFile=$sshKeyFilepath -o StrictHostKeyChecking=accept-new"
@@ -271,5 +302,6 @@ if [[ "$(uname -s)" == "Darwin" ]] ; then
     install_brew
 fi
 install_git
+install_ansible
 clone_stage2_repo
 exec_bootstrap_stage2
