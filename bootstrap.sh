@@ -111,6 +111,23 @@ function get_user_details() {
         fi
         echo "OK, let's try again. Better luck this time!"
     done
+
+    # Save the details to the auditbot config file
+    if [[ -f "$AUDITBOT_CONFIG" ]] ; then
+        echo "Updating your details in $AUDITBOT_CONFIG"
+        sudo sed -i.bak \
+            -e "s/^FULLNAME=.*/FULLNAME=\"$userFullName\"/" \
+            -e "s/^EMAIL=.*/EMAIL=\"$userEmail\"/" \
+            -e "s/^GITHUB=.*/GITHUB=\"$userGithub\"/" \
+            "$AUDITBOT_CONFIG"
+    else
+        echo "Creating $AUDITBOT_CONFIG with your details"
+        echo "FULLNAME=\"$userFullName\"" | sudo tee "$AUDITBOT_CONFIG"
+        echo "EMAIL=\"$userEmail\"" | sudo tee -a "$AUDITBOT_CONFIG"
+        echo "GITHUB=\"$userGithub\"" | sudo tee -a "$AUDITBOT_CONFIG"
+        chmod 444 "$AUDITBOT_CONFIG"
+    fi
+
     echo "Nice to meet you $userFullName! Let's get your new workstation going!"
 }
 
@@ -269,6 +286,14 @@ function install_ansible() {
 }
 
 function clone_stage2_repo() {
+    if [[ -d "$HOME/Expensify-ToolKit" ]] ; then
+        echo "Found an existing clone of the Expensify-ToolKit repository. Checking out main and updating..."
+        cd "$HOME/Expensify-ToolKit"
+        git checkout --quiet main
+        git pull --quiet
+        return
+    fi
+
     echo "Cloning the private bootstrapping repository from GitHub... Standby..."
     export GIT_SSH_COMMAND="ssh -o IdentityFile=$sshKeyFilepath -o StrictHostKeyChecking=accept-new"
     git clone -q git@github.com:Expensify/Expensify-ToolKit.git $HOME/Expensify-ToolKit/
