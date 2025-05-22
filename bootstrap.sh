@@ -281,13 +281,13 @@ function install_ansible() {
             fi
 
             # Make sure the Ansible apt repository is configured
+            # Nnote: apt-add-repository updates the local apt cache after adding the PPA
             if ! apt-add-repository --list | grep -q "^deb .*ansible" ; then
                 echo "Adding Ansible PPA repository"
-                sudo apt-add-repository -y ppa:ansible/ansible
+                sudo apt-add-repository --yes ppa:ansible/ansible
             fi
 
             echo "Installing ansible"
-            sudo apt-get -qq update
             sudo apt-get install -qq -y ansible
             ;;
     esac
