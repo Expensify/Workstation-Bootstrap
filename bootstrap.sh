@@ -34,10 +34,10 @@ function prompt_yn() {
 
 function sudo() {
     # A wrapper on top of `sudo` to provide the user with a more helpful prompt when their sudo password is required
-    if ! sudo -n true ; then
+    if ! /usr/bin/sudo -n true ; then
         echo "$(tput bold)ACTION REQUIRED:$(tput sgr0) Please enter your password so we can escalate to root permissions using sudo"
     fi
-    command "$@"
+    /usr/bin/sudo "$@"
 }
 
 function check_supported_platform() {
@@ -125,7 +125,7 @@ function get_user_details() {
         echo "FULLNAME=\"$userFullName\"" | sudo tee "$AUDITBOT_CONFIG"
         echo "EMAIL=\"$userEmail\"" | sudo tee -a "$AUDITBOT_CONFIG"
         echo "GITHUB=\"$userGithub\"" | sudo tee -a "$AUDITBOT_CONFIG"
-        chmod 444 "$AUDITBOT_CONFIG"
+        sudo chmod 444 "$AUDITBOT_CONFIG"
     fi
 
     echo "Nice to meet you $userFullName! Let's get your new workstation going!"
