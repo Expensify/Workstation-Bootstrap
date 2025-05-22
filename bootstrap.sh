@@ -16,6 +16,8 @@
 set -eu
 
 readonly AUDITBOT_CONFIG='/etc/auditbot.conf'
+# Ssshhh brew.
+NONINTERACTIVE=1
 
 function command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -286,17 +288,20 @@ function install_ansible() {
 }
 
 function clone_stage2_repo() {
+    local branch="${EXPENSIFY_TOOLKIT_BRANCH:-main}"
+
     if [[ -d "$HOME/Expensify-ToolKit" ]] ; then
-        echo "Found an existing clone of the Expensify-ToolKit repository. Checking out main and updating..."
+        echo "Found an existing clone of the Expensify-ToolKit repository. Checking out $branch and updating..."
         cd "$HOME/Expensify-ToolKit"
-        git checkout --quiet main
-        git pull --quiet
+        git fetch --quiet
+        git checkout --quiet "$branch"
+        git pull --quiet origin "$branch"
         return
     fi
 
-    echo "Cloning the private bootstrapping repository from GitHub... Standby..."
+    echo "Cloning the private bootstrapping repository from GitHub (branch: $branch)... Standby..."
     export GIT_SSH_COMMAND="ssh -o IdentityFile=$sshKeyFilepath -o StrictHostKeyChecking=accept-new"
-    git clone -q git@github.com:Expensify/Expensify-ToolKit.git $HOME/Expensify-ToolKit/
+    git clone -q --branch "$branch" git@github.com:Expensify/Expensify-ToolKit.git "$HOME/Expensify-ToolKit/"
 }
 
 function start_bootstrap_stage2() {
