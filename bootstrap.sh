@@ -149,15 +149,12 @@ function ensure_sshkey_exists() {
     echo
     read -p "Press [enter] to open GitHub Settings in your browser." X
     case "$(uname -s)" in
-        Darwin)
-            pbcopy < "${newKeyFile}.pub"
-            open "https://github.com/settings/ssh/new"
-            ;;
-        Linux)
-            xsel --clipboard --input < "${newKeyFile}.pub"
-            gnome-open "https://github.com/settings/ssh/new"
-            ;;
+        Darwin) pbcopy < "${newKeyFile}.pub";;
+        Linux) xsel --clipboard --input < "${newKeyFile}.pub";;
     esac
+
+    # `open` working on Ubuntu and macOS
+    open "https://github.com/settings/ssh/new"
     while true ; do
         if prompt_yn "Have you finished adding your key to GitHub?" ; then
             break
