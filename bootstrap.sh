@@ -221,6 +221,34 @@ function install_brew() {
     brew update --quiet
 }
 
+function install_xsel() {
+    if command_exists xsel ; then
+        echo "xsel already installed"
+        return
+    fi
+
+    case "$(uname -s)" in
+        Darwin) return 0;;
+        Linux)
+            echo "Installing xsel"
+            sudo apt-get -qq -y install xsel
+            ;;
+    esac
+}
+
+function install_curl() {
+    if command_exists curl ; then
+        echo "curl already installed"
+        return
+    fi
+
+    echo "Installing curl"
+    case "$(uname -s)" in
+        Darwin) brew install curl;;
+        Linux) sudo apt-get -qq -y install curl;;
+    esac
+}
+
 function install_git() {
     if command_exists git ; then
         echo "git already installed"
@@ -336,13 +364,22 @@ userEmail=
 userGithub=
 sshKeyFilepath=
 
-get_user_details
-ensure_sshkey_exists
-ensure_sshkey_is_linked_to_github
+echo "$(tput smso)   First we need to install some software   $(tput sgr0)"
+while true ; do
+    if prompt_yn "Ready to continue?" ; then
+        break
+    fi
+done
 if [[ "$(uname -s)" == "Darwin" ]] ; then
     install_brew
 fi
+install_xsel
+install_curl
 install_git
 install_ansible
+echo "$(tput smso)Thanks for your patience, that's all done!$(tput sgr0)"
+get_user_details
+ensure_sshkey_exists
+ensure_sshkey_is_linked_to_github
 clone_stage2_repo
 start_bootstrap_stage2
