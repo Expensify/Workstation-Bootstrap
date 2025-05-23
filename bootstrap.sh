@@ -16,6 +16,7 @@
 set -eu
 
 readonly AUDITBOT_CONFIG='/etc/auditbot.conf'
+
 # Make brew non-interactive.
 export NONINTERACTIVE=1
 
@@ -152,15 +153,12 @@ function ensure_sshkey_exists() {
     echo
     read -p "Press [enter] to open GitHub Settings in your browser." X
     case "$(uname -s)" in
-        Darwin)
-            pbcopy < "${newKeyFile}.pub"
-            open "https://github.com/settings/ssh/new"
-            ;;
-        Linux)
-            xsel --clipboard --input < "${newKeyFile}.pub"
-            gnome-open "https://github.com/settings/ssh/new"
-            ;;
+        Darwin) pbcopy < "${newKeyFile}.pub";;
+        Linux) xsel --clipboard --input < "${newKeyFile}.pub";;
     esac
+
+    # `open` works on Ubuntu and macOS
+    open "https://github.com/settings/ssh/new"
     while true ; do
         if prompt_yn "Have you finished adding your key to GitHub?" ; then
             break
@@ -172,7 +170,7 @@ function ensure_sshkey_is_linked_to_github() {
     githubKeysFile="$(mktemp)"
 
     # First check that GitHub actually has keys linked to the account
-    curl --silent "https://github.com/${userGithub}.keys" > "$githubKeysFile"
+    curl --fail --silent --show-error "https://github.com/${userGithub}.keys" > "$githubKeysFile"
     if [[ "$(cat "$githubKeysFile")" == "Not found" ]] ; then
         echo "Uh-oh! GitHub reports no SSH keys registered to account $userGithub" >&2
         exit 1
@@ -227,6 +225,34 @@ function install_brew() {
     brew update --quiet
 }
 
+function install_xsel() {
+    if command_exists xsel ; then
+        echo "xsel already installed"
+        return
+    fi
+
+    case "$(uname -s)" in
+        Darwin) return 0;;
+        Linux)
+            echo "Installing xsel"
+            sudo apt-get -qq -y install xsel
+            ;;
+    esac
+}
+
+function install_curl() {
+    if command_exists curl ; then
+        echo "curl already installed"
+        return
+    fi
+
+    echo "Installing curl"
+    case "$(uname -s)" in
+        Darwin) brew install curl;;
+        Linux) sudo apt-get -qq -y install curl;;
+    esac
+}
+
 function install_git() {
     if command_exists git ; then
         echo "git already installed"
@@ -259,14 +285,14 @@ function install_ansible() {
             fi
 
             # Make sure the Ansible apt repository is configured
+            # Note: apt-add-repository updates the local apt cache after adding the PPA
             if ! apt-add-repository --list | grep -q "^deb .*ansible" ; then
                 echo "Adding Ansible PPA repository"
-                sudo apt-add-repository -y ppa:ansible/ansible
+                sudo apt-add-repository --yes ppa:ansible/ansible
             fi
 
             echo "Installing ansible"
-            sudo apt-get -qq update
-            sudo apt-get install -qq -y ansible
+            sudo apt-get install -qq -y ansible python3-psutil
             ;;
     esac
 }
@@ -354,13 +380,22 @@ userEmail=
 userGithub=
 sshKeyFilepath=
 
-get_user_details
-ensure_sshkey_exists
-ensure_sshkey_is_linked_to_github
+echo "$(tput smso)   First we need to install some software   $(tput sgr0)"
+while true ; do
+    if prompt_yn "Ready to continue?" ; then
+        break
+    fi
+done
 if [[ "$(uname -s)" == "Darwin" ]] ; then
     install_brew
 fi
+install_xsel
+install_curl
 install_git
 install_ansible
+echo "$(tput smso)Thanks for your patience, that's all done!$(tput sgr0)"
+get_user_details
+ensure_sshkey_exists
+ensure_sshkey_is_linked_to_github
 clone_stage2_repo
 start_bootstrap_stage2
