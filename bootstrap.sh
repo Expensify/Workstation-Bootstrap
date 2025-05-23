@@ -285,6 +285,7 @@ function clone_stage2_repo() {
         git pull --quiet
     fi
 
+    echo "Checking out branch '$branch'"
     git checkout --quiet "$branch"
 }
 
