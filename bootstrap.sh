@@ -170,7 +170,7 @@ function ensure_sshkey_is_linked_to_github() {
     githubKeysFile="$(mktemp)"
 
     # First check that GitHub actually has keys linked to the account
-    curl --silent "https://github.com/${userGithub}.keys" > "$githubKeysFile"
+    curl --fail --silent --show-error "https://github.com/${userGithub}.keys" > "$githubKeysFile"
     if [[ "$(cat "$githubKeysFile")" == "Not found" ]] ; then
         echo "Uh-oh! GitHub reports no SSH keys registered to account $userGithub" >&2
         exit 1
