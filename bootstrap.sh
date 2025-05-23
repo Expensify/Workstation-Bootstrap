@@ -16,8 +16,8 @@
 set -eu
 
 readonly AUDITBOT_CONFIG='/etc/auditbot.conf'
-# Ssshhh brew.
-NONINTERACTIVE=1
+# Make brew non-interactive.
+export NONINTERACTIVE=1
 
 function command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -113,22 +113,6 @@ function get_user_details() {
         fi
         echo "OK, let's try again. Better luck this time!"
     done
-
-    # Save the details to the auditbot config file
-    if [[ -f "$AUDITBOT_CONFIG" ]] ; then
-        echo "Updating your details in $AUDITBOT_CONFIG"
-        sudo sed -i.bak \
-            -e "s/^FULLNAME=.*/FULLNAME=\"$userFullName\"/" \
-            -e "s/^EMAIL=.*/EMAIL=\"$userEmail\"/" \
-            -e "s/^GITHUB=.*/GITHUB=\"$userGithub\"/" \
-            "$AUDITBOT_CONFIG"
-    else
-        echo "Creating $AUDITBOT_CONFIG with your details"
-        echo "FULLNAME=\"$userFullName\"" | sudo tee "$AUDITBOT_CONFIG"
-        echo "EMAIL=\"$userEmail\"" | sudo tee -a "$AUDITBOT_CONFIG"
-        echo "GITHUB=\"$userGithub\"" | sudo tee -a "$AUDITBOT_CONFIG"
-        sudo chmod 444 "$AUDITBOT_CONFIG"
-    fi
 
     echo "Nice to meet you $userFullName! Let's get your new workstation going!"
 }
@@ -289,19 +273,19 @@ function install_ansible() {
 
 function clone_stage2_repo() {
     local branch="${EXPENSIFY_TOOLKIT_BRANCH:-main}"
+    export GIT_SSH_COMMAND="ssh -o IdentityFile=$sshKeyFilepath -o StrictHostKeyChecking=accept-new"
 
-    if [[ -d "$HOME/Expensify-ToolKit" ]] ; then
-        echo "Found an existing clone of the Expensify-ToolKit repository. Checking out $branch and updating..."
+    if [[ ! -d "$HOME/Expensify-ToolKit" ]] ; then
+        echo "Cloning the private bootstrapping repository from GitHub (branch: $branch)... Standby..."
+        git clone --quiet git@github.com:Expensify/Expensify-ToolKit.git "$HOME/Expensify-ToolKit/"
         cd "$HOME/Expensify-ToolKit"
-        git fetch --quiet
-        git checkout --quiet "$branch"
-        git pull --quiet origin "$branch"
-        return
+    else
+        echo "Expensify-ToolKit repository already exists. Updating..."
+        cd "$HOME/Expensify-ToolKit"
+        git pull --quiet
     fi
 
-    echo "Cloning the private bootstrapping repository from GitHub (branch: $branch)... Standby..."
-    export GIT_SSH_COMMAND="ssh -o IdentityFile=$sshKeyFilepath -o StrictHostKeyChecking=accept-new"
-    git clone -q --branch "$branch" git@github.com:Expensify/Expensify-ToolKit.git "$HOME/Expensify-ToolKit/"
+    git checkout --quiet "$branch"
 }
 
 function start_bootstrap_stage2() {
