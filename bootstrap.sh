@@ -16,6 +16,8 @@
 set -eu
 
 readonly AUDITBOT_CONFIG='/etc/auditbot.conf'
+# Make brew non-interactive.
+export NONINTERACTIVE=1
 
 function command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -34,10 +36,10 @@ function prompt_yn() {
 
 function sudo() {
     # A wrapper on top of `sudo` to provide the user with a more helpful prompt when their sudo password is required
-    if ! sudo -n true ; then
+    if ! /usr/bin/sudo -n true ; then
         echo "$(tput bold)ACTION REQUIRED:$(tput sgr0) Please enter your password so we can escalate to root permissions using sudo"
     fi
-    command "$@"
+    /usr/bin/sudo "$@"
 }
 
 function check_supported_platform() {
@@ -111,6 +113,7 @@ function get_user_details() {
         fi
         echo "OK, let's try again. Better luck this time!"
     done
+
     echo "Nice to meet you $userFullName! Let's get your new workstation going!"
 }
 
@@ -269,9 +272,21 @@ function install_ansible() {
 }
 
 function clone_stage2_repo() {
-    echo "Cloning the private bootstrapping repository from GitHub... Standby..."
+    local branch="${EXPENSIFY_TOOLKIT_BRANCH:-main}"
     export GIT_SSH_COMMAND="ssh -o IdentityFile=$sshKeyFilepath -o StrictHostKeyChecking=accept-new"
-    git clone -q git@github.com:Expensify/Expensify-ToolKit.git $HOME/Expensify-ToolKit/
+
+    if [[ ! -d "$HOME/Expensify-ToolKit" ]] ; then
+        echo "Cloning the private bootstrapping repository from GitHub... Standby..."
+        git clone --quiet git@github.com:Expensify/Expensify-ToolKit.git "$HOME/Expensify-ToolKit/"
+        cd "$HOME/Expensify-ToolKit"
+    else
+        echo "Expensify-ToolKit repository already exists. Updating..."
+        cd "$HOME/Expensify-ToolKit"
+        git pull --quiet
+    fi
+
+    echo "Checking out branch '$branch'"
+    git checkout --quiet "$branch"
 }
 
 function start_bootstrap_stage2() {
