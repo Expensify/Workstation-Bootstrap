@@ -329,9 +329,9 @@ function start_bootstrap_stage2() {
     echo "$(tput bold)Please enter your password when prompted for 'BECOME password'$(tput sgr0)"
     ansible-playbook \
         --ask-become-pass \
-        --extra-vars user_fullname="$userFullName" \
-        --extra-vars user_email="$userEmail" \
-        --extra-vars github_username="$userGithub" \
+        --extra-vars "user_fullname='$userFullName'" \
+        --extra-vars "user_email='$userEmail'" \
+        --extra-vars "github_username='$userGithub'" \
         ./bootstrap.yml
 }
 
