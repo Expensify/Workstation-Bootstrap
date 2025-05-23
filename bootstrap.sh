@@ -16,6 +16,7 @@
 set -eu
 
 readonly AUDITBOT_CONFIG='/etc/auditbot.conf'
+
 # Make brew non-interactive.
 export NONINTERACTIVE=1
 
@@ -156,7 +157,7 @@ function ensure_sshkey_exists() {
         Linux) xsel --clipboard --input < "${newKeyFile}.pub";;
     esac
 
-    # `open` working on Ubuntu and macOS
+    # `open` works on Ubuntu and macOS
     open "https://github.com/settings/ssh/new"
     while true ; do
         if prompt_yn "Have you finished adding your key to GitHub?" ; then
@@ -284,7 +285,7 @@ function install_ansible() {
             fi
 
             # Make sure the Ansible apt repository is configured
-            # Nnote: apt-add-repository updates the local apt cache after adding the PPA
+            # Note: apt-add-repository updates the local apt cache after adding the PPA
             if ! apt-add-repository --list | grep -q "^deb .*ansible" ; then
                 echo "Adding Ansible PPA repository"
                 sudo apt-add-repository --yes ppa:ansible/ansible
