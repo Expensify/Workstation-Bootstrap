@@ -276,7 +276,7 @@ function clone_stage2_repo() {
     export GIT_SSH_COMMAND="ssh -o IdentityFile=$sshKeyFilepath -o StrictHostKeyChecking=accept-new"
 
     if [[ ! -d "$HOME/Expensify-ToolKit" ]] ; then
-        echo "Cloning the private bootstrapping repository from GitHub (branch: $branch)... Standby..."
+        echo "Cloning the private bootstrapping repository from GitHub... Standby..."
         git clone --quiet git@github.com:Expensify/Expensify-ToolKit.git "$HOME/Expensify-ToolKit/"
         cd "$HOME/Expensify-ToolKit"
     else
