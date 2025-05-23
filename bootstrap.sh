@@ -292,7 +292,7 @@ function install_ansible() {
             fi
 
             echo "Installing ansible"
-            sudo apt-get install -qq -y ansible
+            sudo apt-get install -qq -y ansible python3-psutil
             ;;
     esac
 }
