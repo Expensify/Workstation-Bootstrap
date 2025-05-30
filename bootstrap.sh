@@ -199,25 +199,21 @@ function ensure_sshkey_is_linked_to_github() {
 }
 
 function install_brew() {
-    if [[ -f /opt/homebrew/bin/brew ]] ; then
-        echo "Homebrew is already installed; no need to install it again."
-        return
-    fi
-
-    echo "Homebrew not found, installing..."
-    /bin/bash -c "$(curl --fail --silent --show-error --location https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-    # Add brew to path if needed
+    # Check if homebrew is installed, ensure it is in the PATH else install it
     if ! command_exists brew ; then
         if [[ -f /opt/homebrew/bin/brew ]]; then
             eval "$(/opt/homebrew/bin/brew shellenv)"
+            return
         elif [[ -f /usr/local/bin/brew ]]; then
             eval "$(/usr/local/bin/brew shellenv)"
-        else
-            echo "Failed to find Homebrew after installation" >&2
-            exit 1
+            return
         fi
     fi
+
+    echo "Failed to find Homebrew, installing it" >&2
+    
+    /bin/bash -c "$(curl --fail --silent --show-error --location https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
     echo "Updating Homebrew"
     brew update --quiet
 }
