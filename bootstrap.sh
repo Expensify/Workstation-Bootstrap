@@ -17,9 +17,6 @@ set -eu
 
 readonly AUDITBOT_CONFIG='/etc/auditbot.conf'
 
-# Make brew non-interactive.
-export NONINTERACTIVE=1
-
 function command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
@@ -202,7 +199,7 @@ function ensure_sshkey_is_linked_to_github() {
 }
 
 function install_brew() {
-    if command_exists brew ; then
+    if [[ -f /opt/homebrew/bin/brew ]] ; then
         echo "Homebrew is already installed; no need to install it again."
         return
     fi
