@@ -200,12 +200,15 @@ function ensure_sshkey_is_linked_to_github() {
 
 function install_brew() {
     # Check if homebrew is installed, ensure it is in the PATH else install it
+    echo "Checking for Homebrew installation..."
     if ! command_exists brew ; then
         if [[ -f /opt/homebrew/bin/brew ]]; then
             eval "$(/opt/homebrew/bin/brew shellenv)"
+            echo "Homebrew installed at /opt/homebrew/bin/brew"
             return
         elif [[ -f /usr/local/bin/brew ]]; then
             eval "$(/usr/local/bin/brew shellenv)"
+            echo "Homebrew installed at /usr/local/bin/brew"
             return
         fi
     fi
