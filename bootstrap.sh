@@ -43,6 +43,13 @@ function sudo() {
     /usr/bin/sudo "$@"
 }
 
+function is_ssh_tty() {
+    if [[ -n "${SSH_TTY:-}" ]]; then
+        return 0
+    fi
+    return 1
+}
+
 function check_supported_platform() {
     case "$(uname -s)" in
         Darwin)
@@ -139,7 +146,7 @@ function ensure_sshkey_exists() {
     # Prompt user to add the new key to their GitHub account
     echo
     echo "$(tput smso)          ACTION REQUIRED          $(tput sgr0)"
-    echo "You now need to add your new SSH key to your GitHub account. When you press enter, I will:"
+    echo "You now need to add your new SSH key to your GitHub account. When you press enter, I will try to:"
     echo "  - Copy the key to your clipboard for you, ready to paste."
     echo "  - Open your GitHub Account Settings page in your browser."
     echo
@@ -151,14 +158,24 @@ function ensure_sshkey_exists() {
     echo "For your reference, here is your shiny new SSH Public Key:"
     cat "${newKeyFile}.pub"
     echo
-    read -p "Press [enter] to open GitHub Settings in your browser." X
-    case "$(uname -s)" in
-        Darwin) pbcopy < "${newKeyFile}.pub";;
-        Linux) xsel --clipboard --input < "${newKeyFile}.pub";;
-    esac
 
-    # `open` works on Ubuntu and macOS
-    open "https://github.com/settings/ssh/new"
+    local githubSettingsUrl="https://github.com/settings/ssh/new"
+    # If the user is doing a headless setup, then we can't do any of the local machine actions, so they will have to do it manually.
+    if is_ssh_tty ; then
+        echo "I'm running in an SSH session, so I can't copy the key or open the browser for you -- you'll need to do this on your host machine manually."
+        echo "Please open the following URL in your browser and add the key manually:"
+        echo "$githubSettingsUrl"
+    else
+        read -p "Press [enter] to open GitHub Settings in your browser." X
+        case "$(uname -s)" in
+            Darwin) pbcopy < "${newKeyFile}.pub";;
+            Linux) xsel --clipboard --input < "${newKeyFile}.pub";;
+        esac
+
+        # `open` works on Ubuntu and macOS
+        open "$githubSettingsUrl"
+    fi
+
     while true ; do
         if prompt_yn "Have you finished adding your key to GitHub?" ; then
             break
@@ -228,6 +245,11 @@ function install_brew() {
 function install_xsel() {
     if command_exists xsel ; then
         echo "xsel already installed"
+        return
+    fi
+
+    if is_ssh_tty ; then
+        echo "skipping xsel, running in ssh session"
         return
     fi
 
