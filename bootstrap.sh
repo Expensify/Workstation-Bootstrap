@@ -317,7 +317,7 @@ function clone_stage2_repo() {
 
 function start_bootstrap_stage2() {
     echo "$(tput smso)Starting Bootstrap Stage 2$(tput sgr0)"
-    cd $HOME/Expensify-ToolKit/ansible/
+    cd "$HOME/Expensify-ToolKit/ansible/"
 
     # Silence warnings about not having an inventory
     export ANSIBLE_LOCALHOST_WARNING=False
@@ -333,6 +333,10 @@ function start_bootstrap_stage2() {
         --extra-vars "user_email='$userEmail'" \
         --extra-vars "github_username='$userGithub'" \
         ./bootstrap.yml
+
+    # Run in the user's terminal, outside Ansible, so individual protected-file
+    # appends can prompt for sudo without relying on Ansible's become password.
+    bash "$HOME/Expensify-ToolKit/laptop-config/fixCACerts.sh"
 }
 
 # Note: Quoting the heredoc delimiter ('EOT') makes the backslashes render as normal characters (not escape characters)
